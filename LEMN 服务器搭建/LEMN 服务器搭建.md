@@ -4,17 +4,21 @@
 
 #LEMN 服务器搭建
 
-**Linux + Nginx + MairaDB + Node + PM2 + HTTPS**
+###Linux + Nginx + MongoDB or MairaDB + Node + PM2 + HTTPS
 
 
+
+```js
+journalctl -xe // 查看日志
+```
 
 
 
 ###第一步：安装 **Cent OS** 
 
+云服务器: 在腾讯云 手动安装 Cent OS 最新版
 
-
-**自己下载制作最新版****CentOS****系统安装****U****盘，并安装好****CentOS****系统，连接好网路（如果是局域网服务器，最好配置好静态获取****IP****），进行下列操作**
+自己下载：制作最新版CentOS系统安装U盘，并安装好CentOS系统，连接好网路（如果是局域网服务器，最好配置好静态获取IP），进行下列操作
 
 
 
@@ -288,6 +292,41 @@ IdentityFile ~/.ssh/sciencekids_key     # 设置密钥文件路径
 
 
 
+### Mac 终端 SSH 访问远端服务器配置
+
+打开<font color="red"> **访达** </font>，跳出窗口，然后按  <font color="red"> **苹果键 + shift +G** </font> 跳出窗口，输入<font color="red">  **~/.ssh**  </font>跳出窗口，进行配置即可
+
+```js
+// 在 ~/.ssh/ 文件夹下 的 config 文件里 添加以下内容，通过 science 代理下面的配置
+
+Host            science         
+HostName        123.206.30.43       
+Port            22            
+User            root            
+IdentityFile    ~/.ssh/science.dms
+```
+
+
+
+```js
+ssh science // 在MAC 终端输入 看是否能访问远程服务器
+```
+
+```js
+// 如果MAc终端报错
+Permissions 0644 for '/Users/renpeng/.ssh/science.dms' are too open.
+It is required that your private key files are NOT accessible by others
+This private key will be ignored.
+Load key "/Users/renpeng/.ssh/science.dms": bad permissions
+root@123.206.30.43: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+
+// 说明 science.dms 私钥的权限问题，修改权限就可以了
+chmod 600 ~/.ssh/science.dms // 重要哦
+ssh science // 再重新登录
+```
+
+
+
 
 
 
@@ -451,22 +490,40 @@ rpm 命令：遵循GPL协议且功能强大的包管理，它可以建立、安�
 
 
 1. nginx -v  #查看是否最新的 nginx版本，也看看是否安装过 nginx 
+
 2. yum remove nginx  #如果已经安装过老版本的 nginx，就卸载掉
-3. 在centos上建立一个文件，位置为：/etc/yum.repos.d/nginx.repo    在/etc/yum.repos.d 文件夹下建立  nginx.repo 文件。 将以下内容粘贴进该文件，此步骤很重要，可以使 centos 7 自动升级 nginx 到最新版本，[具体可以点击这里查看nginx官网的指导](http://nginx.org/en/linux_packages.html#stable)                                        
 
+3. 你在新服务器上安装 Nginx 之前，需要设置 Nginx 包管理仓库，随后你就可以从这个包管理仓库升级nginx了
 
+   在centos上建立一个文件，位置为：/etc/yum.repos.d/nginx.repo    在/etc/yum.repos.d 文件夹下建立  nginx.repo 文件。 将以下内容粘贴进该文件，此步骤很重要，可以使 centos 7 自动升级 nginx 到最新版本，[具体可以点击这里查看nginx官网的指导](http://nginx.org/en/linux_packages.html#stable)                                        
 
+```js
+sudo yum install yum-utils // 安装 yum 软件包
+```
 
-
-[nginx]
-
-name=nginx repo
-
-baseurl=http://nginx.org/packages/centos/7/$basearch/
-
-gpgcheck=0 
-
+```js
+[nginx-stable]
+name=nginx stable repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=1
 enabled=1
+gpgkey=https://nginx.org/keys/nginx_signing.key
+
+[nginx-mainline]
+name=nginx mainline repo
+baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/
+gpgcheck=1
+enabled=0
+gpgkey=https://nginx.org/keys/nginx_signing.key
+```
+
+把上面的代码粘贴到 新建立的 nginx.repo 文件里面
+
+默认连接的是 nginx stable repo , 如果你想换成 nginx mainline repo 的话，进行以下操作
+
+```js
+sudo yum-config-manager --enable nginx-mainline
+```
 
 
 
@@ -488,7 +545,7 @@ EPEL, 即 Extra Packages for Enterprise Linux 的简称, 是为企业级 Linux �
 
 ​            
 
-1. yum install nginx –y  #安装最新稳定版的 nginx
+1. sudo yum install nginx –y  #安装最新稳定版的 nginx
 2. nginx -v  #安装后查看是否最新稳定版 nginx
 3. systemctl start nginx.service  # 开启nginx服务器
 
@@ -651,13 +708,15 @@ atom /etc/hosts  #用 atom编辑器，打开mac上的 hosts 配置
 
 \9. make prefix=/usr/local/git install   #安装 git
 
-\10. echo 'export PATH=$PATH:/usr/local/git/bin' >> /etc/bashrc  #将 git 加入 Path or echo'export PATH=​$PATH:/usr/local/git/bin' > /etc/profile.d/git.sh
+\10. echo 'export PATH=$PATH:/usr/local/git/bin' >> /etc/bashrc  #将 git 加入 Path or echo'export PATH=$PATH:/usr/local/git/bin' > /etc/profile.d/git.sh
 
 \11. source /etc/bashrc  #查看git版本
 
 \12. yum install git  #先安装 git ，有了git，直接从 github上clone项目到本地
 
 \13. yum remove nodejs –y  #如果已经安装过node，就卸载掉
+
+在github 上搜索 mvn ，找到官网发布地址 
 
 \14. curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash #nvm 源装完nvm后，重启centos服务器
 
@@ -835,7 +894,7 @@ nrm test npm  # 测试相应源的响应时间
 
 
 
-###第五步：安装MariaDB或者MySql 数据库
+###第五步：安装MongoDB 或 MariaDB或者MySql 数据库 
 
 推荐使用 MariaDB，免费，搜索更快速, 效率更高
 
@@ -1440,5 +1499,42 @@ server {
 
 
 
-**第七步：** 
+### 第七步：将本地项目部署到服务器
+
+1、 将前端代码和后端代码上传到nginx指定的位置
+
+/usr/share/nginx/html/admin  // 前台代码位置
+
+/usr/share/nginx/html/server // 后台 代码位置
+
+2、安装好 数据库 MongoDB，配置好端口
+
+3、在nginx服务器端设置代理，将 带有 api 的路由 都转发到 指定的端口:9528
+
+server {
+        listen       80 default_server;
+        listen       [::]:80 default_server;
+        server_name  _;
+        root         /usr/share/nginx/html;
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+    
+        location / {
+    	root /root/www/;
+    	index index.html index.htm;	
+        }
+    	location /api/ {
+    		proxy_pass	http://127.0.0.1:9528; //表示监听
+    		proxy_set_header Host	$host;
+    	}
+        error_page 404 /404.html;
+            location = /40x.html {
+        }
+    
+        error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+        }
+    }
+
 

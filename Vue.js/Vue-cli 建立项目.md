@@ -202,4 +202,10 @@ npm run dev
 npm run build
 ```
 
+```js
+npm run build:prod --report
+```
+
+
+
 各个组件的使用方法请参阅它们各自的文档。

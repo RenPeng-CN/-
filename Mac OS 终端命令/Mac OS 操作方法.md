@@ -373,3 +373,35 @@ https://github.com/nvm-sh/nvm/blob/master/README.md // 安装 nvm 最新版要�
 ### Mac 终端 SSH 访问远端服务器配置
 
 打开<font color="red"> **访达** </font>，跳出窗口，然后按  <font color="red"> **苹果键 + shift +G** </font> 跳出窗口，输入<font color="red">  **~/.ssh**  </font>跳出窗口，进行配置即可
+
+```js
+// 在 ~/.ssh/ 文件夹下 的 config 文件里 添加以下内容，通过 science 代理下面的配置
+
+Host            science         
+HostName        123.206.30.43       
+Port            22            
+User            root            
+IdentityFile    ~/.ssh/science.dms
+```
+
+
+
+```js
+ssh science // 在MAC 终端输入 看是否能访问远程服务器
+```
+
+```js
+// 如果MAc终端报错
+Permissions 0644 for '/Users/renpeng/.ssh/science.dms' are too open.
+It is required that your private key files are NOT accessible by others
+This private key will be ignored.
+Load key "/Users/renpeng/.ssh/science.dms": bad permissions
+root@123.206.30.43: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+
+// 说明 science.dms 私钥的权限问题，修改权限就可以了
+chmod 600 ~/.ssh/science.dms // 重要哦
+ssh science // 再重新登录
+```
+
+
+

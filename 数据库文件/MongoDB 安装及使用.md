@@ -2,6 +2,72 @@
 
 ### 新建项目，并设置 MongoDB ( Linux OS 上 进行操作 )
 
+linux 安装 MongoDB 源
+
+```js
+// 1.配置MongoDB的yum源, 在 etc/yum.yepos.d / 下建立文件 mongodb-org
+vim /etc/yum.repos.d/mongodb-org-3.4.repo
+
+// vi 编辑这个空文件，把以下内容粘贴进去并保存退出
+[mongodb-org-4.2]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.2/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-4.2.asc
+
+#这里可以修改 gpgcheck=0, 省去gpg验证
+[root@localhost ~]# yum makecache      
+```
+
+
+
+### Centos7下yum安装mongodb
+
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/
+
+```js
+yum -y install mongodb-org // 安装 mongodb
+whereis mongod // mongodb 安装的位置
+vim /etc/mongod.conf // 查看配置文件
+systemctl start mongod.service // 启动 mongodb
+systemctl stop mongod.service  // 停止 mongodb
+systemctl restart mongod.service // 重启 mongodb
+systemctl status mongod.service // 查看状态
+systemctl enable mongod.service // 随机启动
+
+// 外网访问需要关闭防火墙？为什么不在防火墙开端口呢？
+systemctl stop firewalld.service #停止firewall
+systemctl disable firewalld.service #禁止firewall开机启动
+
+mongo // 启动
+show dbs // 查看数据库
+exit // 退出 mongodb
+vim /etc/mongod.conf //设置mongodb远程访问 编辑mongod.conf注释bindIp,并重启mongodb.(这句配置代表只能本机使用，所以需注释)
+systemctl restart mongod.service // 重启mongodb使修改生效：
+
+```
+
+
+
+二、卸载*
+
+*1、停止服务*
+
+　　*service mongod stop*
+
+*2、删除安装的包*
+
+　　*yum erase $(rpm -qa | grep mongodb-org)*
+
+*3、删除数据及日志*
+
+　　*rm -r /var/log/mongodb*
+
+　　*rm -r /var/lib/mongo*
+
+
+
 ```js
 1. mkdir myproject  # 新建一个项目文件夹
 2. cd myproject   # 进入该文件夹
@@ -10,12 +76,184 @@
 5. mongod --dbpath=/data  #  配置数据存储路径
 
 // 导出 备份 数据库 案例 -h host地址   -d 数据库名称  -o 输出地址
-mongodump -h 127.0.0.1 -d cms -o /Volumes/RenPeng/Code/cms_demo/mongoDB
+mongodump -h 127.0.0.1 -d vue_koa_demo -o /Volumes/RenPeng/Code/cms_demo/mongoDB
 
-// 导出 数据库 案例 -h host地址   -d 数据库名称  
-mongorestore -h 127.0.0.1 -d koademo /Volumes/RenPeng/Code/cms_demo/mongoDb/cms
+// 先将备份文件上传到服务器的一个地址，比如说 /opt/XXX
+// 恢复 数据库 案例 -h host地址   -d 数据库名称  /数据库位置/
+mongorestore -h 127.0.0.1 -d vue_koa_demo /opt/vue_koa_demo
 
 ```
+
+
+
+###初次安装并启动 MongoDB，可观察到数据库报了4个警告
+
+https://blog.csdn.net/vkingnew/article/details/81703707
+
+可观察到数据库报了4个警告： 
+1. WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine 
+2. WARNING: Access control is not enabled for the database. 
+3. WARNING: /sys/kernel/mm/transparent_hugepage/enabled is ‘always’. 
+4. WARNING: /sys/kernel/mm/transparent_hugepage/defrag is ‘always’.
+
+
+
+###下面来一一解决：
+
+####1.WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine（强烈建议使用带WiredTiger存储引擎的XFS文件系统）
+报这个错是因为我的虚拟环境使用的是EXT4文件系统，官方不建议，但不影响使用
+
+在Linux上运行MongoDB时，官方建议使用Linux内核版本2.6.36或更高版本，使用XFS或EXT4文件系统。 如果可能，最好使用XFS，因为它通常与MongoDB表现更好。
+
+使用WiredTiger存储引擎，强烈建议使用XFS，以避免在使用EXT4与WiredTiger时可能发生的性能问题。
+
+使用MMAPv1存储引擎，MongoDB在使用它们之前预先分配其数据库文件，并经常创建大文件。 因此，官方建议使用XFS或EXT4文件系统。 如果可能，请使用XFS，因为它通常与MongoDB表现更好。
+
+参考Kernel and File Systems
+
+
+
+####2.WARNING: Access control is not enabled for the database.（数据库未启用访问控制）
+此告警信息是说MongoDB需要有一个安全库来开启数据库访问控制，默认安装的启动的是mongod --dbpath /var/lib/mongo  此时无须用户认证登录的信息。
+
+####解决办法：
+
+在MongoDB部署上启用访问控制会强制执行身份验证，要求用户识别自己。当访问启用了访问控制的MongoDB部署时，用户只能执行由其角色确定的操作。
+
+```js
+mongod --dbpath /var/lib/mongo // 指定 数据库文件位置
+mongo // 访问数据库
+show dbs // 显示所有数据库
+use admin // 使用 admin 数据库
+
+// 创建用户和密码均为root，具有全部的权限。
+db.createUser({user:"root",pwd:"root",roles: [{role:"userAdminAnyDatabase", db: "admin" } ]})
+
+exit // 退出数据库
+//重启mongoDB 使用用户名和密码登录：
+systemctl stop mongod
+systemctl restart mongod.service // 重启mongoDB 使用用户名和密码登录：
+mongod --auth --dbpath /var/lib/mongo
+
+// 用户名密码登录
+mongo --username root --password root --port 27017 --authenticationDatabase admin
+
+```
+
+
+
+另外，可以测试，创建新的数据库，并在其中创建用户 
+
+```js
+use test // 创建新的数据库 test
+db.createUser(
+...   {
+...     user: "myTester",
+...     pwd: "xyz123",
+...     roles: [ { role: "readWrite", db: "test" },
+...              { role: "read", db: "reporting" } ]
+...   }
+... )
+
+
+mongo --port 27017 -u "myTester" -p "xyz123" --authenticationDatabase "test"
+```
+
+
+
+3.WARNING: /sys/kernel/mm/transparent_hugepage/enabled is ‘always’.与4.WARNING: /sys/kernel/mm/transparent_hugepage/defrag is ‘always’.
+这两个问题是CentOS7特有的，因为从CentOS7版本开始会默认启用Transparent Huge Pages(THP) 
+Transparent Huge Pages(THP)本意是用来提升内存性能，但某些数据库厂商还是建议直接关闭THP(比如说Oracle、MariaDB、MongoDB等)，否则可能会导致性能出现下降。
+
+- 查看THP状态
+
+```js
+[root@localhost ~]#  cat /sys/kernel/mm/transparent_hugepage/defrag
+[always] madvise never
+[root@localhost ~]# cat /sys/kernel/mm/transparent_hugepage/enabled
+[always] madvise never
+
+```
+
+
+
+- 修改系统配置
+
+```js
+[root@localhost ~]# vim /etc/rc.d/rc.local
+
+#!/bin/bash
+# THIS FILE IS ADDED FOR COMPATIBILITY PURPOSES
+#
+# It is highly advisable to create own systemd services or udev rules
+# to run scripts during boot instead of using this file.
+#
+# In contrast to previous versions due to parallel execution during boot
+# this script will NOT be run after all other services.
+#
+# Please note that you must run 'chmod +x /etc/rc.d/rc.local' to ensure
+# that this script will be executed during boot.
+
+ // 修改系统配置加入如下配置重启操作系统：
+touch /var/lock/subsys/local
+
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+ echo never > /sys/kernel/mm/transparent_hugepage/enabled
+ fi
+ if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+ echo never > /sys/kernel/mm/transparent_hugepage/defrag
+ fi
+
+
+[root@localhost ~]# chmod +x /etc/rc.d/rc.local
+
+```
+
+
+
+重启CentOS
+
+reboot   或者 init6
+
+```js
+mongod --auth --dbpath /var/lib/mongo
+mongo // 进入数据库
+show dbs // 显示所有数据库
+```
+
+
+
+修改数据库默认 ip
+
+```js
+vi /etc/mongod.conf  // 打开mongo 的默认配置文件
+
+// 将 bindIp 后面的地址换成 服务器的 IP 地址
+port:27017  // 默认端口还是27017
+bindIp:1230206.30.43  
+```
+
+
+
+修改数据库文件目录 // 如果需要修改，就在这里修改，默认数据文件路径为/var/lib/mongo，这里我没做修改，有需要的可以按业务需求自行创建相应数据文件路径
+
+```js
+[root@localhost ~]# vim /etc/mongod.conf
+
+# Where and how to store data.
+storage:
+  dbPath: /var/lib/mongo
+  journal:
+    enabled: true
+```
+
+重新mongodb 服务
+
+```js
+systemctl restart mongod.service 
+```
+
+
 
 
 
@@ -515,1032 +753,6 @@ mongo admin -u 用户名 -p 密码 mongo 192.168.1.200:27017/test -u user -p pas
  ```js
 const url = 'mongodb://admin:123456@localhost:27017/';
  ```
-
-
-
-
-
-### MongoDB的高级查询 **aggregate** 聚合管道 
-
-
-
-主讲教师:(大地) 
-
-合作网站:**www.itying.com** (IT 营) 我的专栏:https://www.itying.com/category-79-b0.html 
-
-一、 MongoDB 聚合管道(Aggregation Pipeline)..............................................................................1 
-
-二、 MongoDB Aggregation 管道操作符与表达式...............................................................................2 
-
-三、 数据模拟........................................................................................................................................4 
-
-四、 $project...........................................................................................................................................4 
-
-五、 $match............................................................................................................................................5 
-
-六、 $group.............................................................................................................................................6 
-
-七、 $sort................................................................................................................................................6 
-
-八、 $limit...............................................................................................................................................7 
-
-九、 $skip................................................................................................................................................8 
-
-十、 $lookup 表关联.............................................................................................................................9 
-
-
-
-一、**MongoDB** 聚合管道(**Aggregation Pipeline**) 
-
-使用聚合管道可以对集合中的文档进行变换和组合。 **实际项目:**表关联查询、数据的统计。 
-
-MongoDB 中使用 db.COLLECTION_NAME.**aggregate([{<stage>},...])** 方法 来构建和使用聚合管道。先看下官网给的实例，感受一下聚合管道的用法。 
-
-二、**MongoDB Aggregation** 管道操作符与表达式 
-
-| 管道操作 符 | Description                                       |
-| ----------- | ------------------------------------------------- |
-| $project    | 增加、删除、重命名字段                            |
-| $match      | 条件匹配。只满足条件的文档才能进入下一阶段        |
-| $limit      | 限制结果的数量                                    |
-| $skip       | 跳过文档的数量                                    |
-| $sort       | 条件排序。                                        |
-| $group      | 条件组合结果 统计                                 |
-| $lookup     | $lookup 操作符 用以引入其它集合的数据(表关联查询) |
-
- 
-
-**SQL** 和 **NOSQL** 对比**:** 
-
-| NOSQL    | SQL      |
-| -------- | -------- |
-| $match   | WHERE    |
-| $group   | GROUP BY |
-| $match   | HAVING   |
-| $project | SELECT   |
-| $sort    | ORDER BY |
-| $limit   | LIMIT    |
-| $sum     | SUM()    |
-| $sum     | COUNT()  |
-| $lookup  | join     |
-
-
-
-**管道表达式:**
-
-管道操作符作为“键”,所对应的“值”叫做管道表达式。 
-
-例如 {$match:{ status:"A" }}, ​$Match 称为管道操作符，而 status:"A"称为管道表达式， 是管道操作符的操作数(Operand)。 
-
-每个管道表达式是一个文档结构，它是由字段名、字段值、和一些表达式操作符组成的。 
-
-| 常用表达式操作符 | **Description**        |
-| ---------------- | ---------------------- |
-| $addToSet        | 将文档指定字段的值去重 |
-| $max             | 文档指定字段的最大值   |
-| $min             | 文档指定字段的最小值   |
-| $sum             | 文档指定字段求和       |
-| $avg             | 文档指定字段求平均     |
-| $gt              | 大于给定值             |
-| $lt              | 小于给定值             |
-| $eq              | 等于给定值             |
-
- 
-
-三、 数据模拟 , 将以下数据输入 mongoDB 数据库，以便进行模拟
-
-```js
-db.order.insert({"order_id":"1","uid":10,"trade_no":"111","all_price":100,"all_num":2}); db.order.insert({"order_id":"2","uid":7,"trade_no":"222","all_price":90,"all_num":2}); db.order.insert({"order_id":"3","uid":9,"trade_no":"333","all_price":20,"all_num":6}); 
-
-db.order_item.insert({"order_id":"1","title":"商品鼠标 1","price":50,num:1}); db.order_item.insert({"order_id":"1","title":"商品键盘 2","price":50,num:1}); db.order_item.insert({"order_id":"1","title":"商品键盘 3","price":0,num:1}); 
-
-db.order_item.insert({"order_id":"2","title":"牛奶","price":50,num:1}); db.order_item.insert({"order_id":"2","title":"酸奶","price":40,num:1}); 
-
-db.order_item.insert({"order_id":"3","title":"矿泉水","price":2,num:5}); db.order_item.insert({"order_id":"3","title":"毛巾","price":10,num:1}); 
-```
-
-
-
-四、 **$project** 
-
-修改文档的结构，可以用来重命名、增加或删除文档中的字段。 
-
-要求查找 order 只返回文档中 trade_no 和 all_price 字段 
-
-```js
-db.order.aggregate([ { 
-
-$project:{ trade_no:1, all_price:1 } } 
-
-]) 
-```
-
-
-
-五、 **$match** 
-
-作用
- 用于过滤文档。用法类似于 find() 方法中的参数。 
-
-```js
-db.order.aggregate([ 
-{ 
-
-     $project:{ trade_no:1, all_price:1 } // 只查找两个字段
-}, 
-
-{
-    $match:{"all_price":{$gte:90}}  // 再查找出 all_price 大于等于 90 的数据
-
-} 
-]) 
-```
-
-
-
-六、 **$group** 
-
-```
-将集合中的文档进行分组，可用于统计结果。
-统计每个订单的订单数量，按照订单号分组
-```
-
-```js
-db.order_item.aggregate( [ 
-{
- $group: {_id: "$order_id", total: {$sum: "$num"}} 
-
-} ] 
-
-) 
-```
-
-
-
-七、 **$sort** 
-
-将集合中的文档进行排序。 
-
-```js
-db.order.aggregate([ { 
-
-$project:{ trade_no:1, all_price:1 } },  // 查询两个字段
-
-{
- $match:{"all_price":{$gte:90}} // 匹配出 大于等于90的数据
-
-}, { 
-
-$sort:{"all_price":-1} } // 再按照从大到小的降序排序，
-
-]) 
-```
-
-
-
-八、 **$limit** 
-
-```js
-db.order.aggregate([ { 
-
-$project:{ trade_no:1, all_price:1 } }, 
-
-{
- $match:{"all_price":{$gte:90}} 
-
-}, { 
-
-$sort:{"all_price":-1} }, 
-
-{
- $limit:1 
-
-} ]) 
-```
-
-
-
-九、 **$skip** 
-
-```js
-db.order.aggregate([ { 
-
-$project:{ trade_no:1, all_price:1 } }, 
-
-{
- $match:{"all_price":{$gte:90}} 
-
-}, { 
-
-$sort:{"all_price":-1} }, 
-
-{
- $skip:1 
-
-} ]) 
-```
-
-
-
-十、**$lookup** 表关联查询，非常重要哦
-
-```js
-db.order.aggregate([ {  // order 声明为主表
-  $lookup: {  // 关联查询的命令
-    from: "order_item",  // 声明要关联的表示 order_item
-    localField: "order_id",  // 声明 主表字段
-    foreignField: "order_id", // 声明要匹配的 关联表 字段
-    as: "items" // 将关联结果放到 items 数组里
-   } } 
-]) 
-
-
-
-// 以下是查询出的结果
-
-{
- "_id": ObjectId("5b743d8c2c327f8d1b360540"), "order_id": "1",
- "uid": 10,
- "trade_no": "111",
- "all_price": 100,
- "all_num": 2,
- "items": [{ 
-
-"_id": ObjectId("5b743d9c2c327f8d1b360543"), "order_id": "1",
- "title": "商品鼠标 1",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da12c327f8d1b360544"), "order_id": "1",
- "title": "商品键盘 2",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b74f457089f78dc8f0a4f3b"), "order_id": "1",
- "title": "商品键盘 3",
- "price": 0, 
-
-"num": 1 }] 
-
-}{
- "_id": ObjectId("5b743d902c327f8d1b360541"), "order_id": "2",
- "uid": 7,
- "trade_no": "222",
- "all_price": 90,
- "all_num": 2,
- "items": [{ 
-
-"_id": ObjectId("5b743da52c327f8d1b360545"), "order_id": "2",
- "title": "牛奶",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da92c327f8d1b360546"), "order_id": "2", 
-
-"title": "酸奶", "price": 40, "num": 1 
-
-}] }{ 
-
-"_id": ObjectId("5b743d962c327f8d1b360542"), "order_id": "3",
- "uid": 9,
- "trade_no": "333", 
-
-"all_price": 20, "all_num": 6, "items": [{ 
-
-"_id": ObjectId("5b743dad2c327f8d1b360547"), "order_id": "3",
- "title": "矿泉水",
- "price": 2, 
-
-"num": 5 }, { 
-
-"_id": ObjectId("5b743dff2c327f8d1b360548"), "order_id": "3",
- "title": "毛巾",
- "price": 10, 
-
-"num": 1 }] 
-
-} 
-```
-
-
-
-```js
-db.order.aggregate([ { 
-
-$lookup: 
-
-{ 
-
-} }, 
-
-{
- $match:{"all_price":{$gte:90}} 
-
-} 
-
-]) 
-
-{
- "_id": ObjectId("5b743d8c2c327f8d1b360540"), "order_id": "1",
- "uid": 10,
- "trade_no": "111",
- "all_price": 100,
- "all_num": 2,
- "items": [{ 
-
-"_id": ObjectId("5b743d9c2c327f8d1b360543"), "order_id": "1",
- "title": "商品鼠标 1",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da12c327f8d1b360544"), "order_id": "1",
- "title": "商品键盘 2",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b74f457089f78dc8f0a4f3b"), "order_id": "1",
- "title": "商品键盘 3",
- "price": 0, 
-
-"num": 1 }] 
-
-from: "order_item", 
-
-localField: "order_id", foreignField: "order_id", as: "items" 
-
-}{
- "_id": ObjectId("5b743d902c327f8d1b360541"), "order_id": "2",
- "uid": 7,
- "trade_no": "222",
- "all_price": 90,
- "all_num": 2,
- "items": [{ 
-
-"_id": ObjectId("5b743da52c327f8d1b360545"), "order_id": "2",
- "title": "牛奶",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da92c327f8d1b360546"), "order_id": "2",
- "title": "酸奶",
- "price": 40, 
-
-"num": 1 }] 
-
-} 
-```
-
-
-
-
-
-```js
-db.order.aggregate([ 
-
-{
- $lookup: 
-
-{ 
-
-} }, 
-
-{
- $project:{ trade_no:1, all_price:1,items:1 } 
-
-}, { 
-
-$match:{"all_price":{$gte:90}} }, 
-
-{
- $sort:{"all_price":-1} 
-
-from: "order_item", 
-
-localField: "order_id", foreignField: "order_id", as: "items" 
-
-}, ]) 
-
-{
- "_id": ObjectId("5b743d8c2c327f8d1b360540"), "trade_no": "111",
- "all_price": 100,
- "items": [{ 
-
-"_id": ObjectId("5b743d9c2c327f8d1b360543"), "order_id": "1",
- "title": "商品鼠标 1",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da12c327f8d1b360544"), "order_id": "1",
- "title": "商品键盘 2",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b74f457089f78dc8f0a4f3b"), "order_id": "1",
- "title": "商 品键盘 3",
- "price": 0, 
-
-"num": 1 }] 
-
-}{
- "_id": ObjectId("5b743d902c327f8d1b360541"), "trade_no": "222",
- "all_price": 90,
- "items": [{ 
-
-"_id": ObjectId("5b743da52c327f8d1b360545"), "order_id": "2",
- "title": "牛奶",
- "price": 50, 
-
-"num": 1 }, { 
-
-"_id": ObjectId("5b743da92c327f8d1b360546"), "order_id": "2",
- "title": "酸奶",
- "price": 40, 
-
-"num": 1 
-
-}] }  
-```
-
-
-
-
-
-
-
-
-
-## mongoose  入门以及 **mongoose** 实现数据 的增、删、改、查 
-
-
-
-主讲教师:(大地) 
-
-合作网站:**www.itying.com** (IT 营) 我的专栏:https://www.itying.com/category-79-b0.html 
-
-目录
- 一、mongoose 介绍..................................................................................................................................1 
-
-二、 mongoose 的安装以及使用............................................................................................................2 
-
-1. 安装.............................................................................................................................................. 2 
-2. 引入 mongoose 并连接数据库............................................................................................... 2 
-3. 定义 Schema............................................................................................................................. 2 
-4. 创建数据模型........................................................................................................................... 2 
-5. 查找数据................................................................................................................................... 3 
-6. 增加数据................................................................................................................................... 3 
-7. 修改数据................................................................................................................................... 3 
-8. 删除数据................................................................................................................................... 3 
-9. 保存成功查找........................................................................................................................... 4 
-
-三、 mongoose 模块化............................................................................................................................4 
-
-
-
-
-
-###一、mongoose 介绍 
-
-Mongoose 是在 node.js 异步环境下对 mongodb 进行便捷操作的对象模型工具。Mongoose 是 NodeJS 的驱动，不能作为其他语言的驱动。 
-
-**Mongoose** 有两个特点 1、通过关系型数据库的思想来设计非关系型数据库 2、基于 mongodb 驱动，简化操作 
-
-
-
-###二、mongoose 的安装以及使用 
-
-官网:https://mongoosejs.com/
- **1.** 安装
-
-```js
-npm i mongoose --save
-```
-
-
-
- **2**、引入 **mongoose** 并连接数据库 
-
-```js
-// 1. 引入 mongoose 模块
-const mongoose = require('mongoose'); 
-
- // 2. 通过 mongoose 连接 mongo 数据库
-mongoose.connect('mongodb://127.0.0.1:27017/news',{useNewUrlParser:true},(err) => {
-	if(err){
-		console.log('连接数据库失败');
-		console.log(err);
-		return;
-	}
-	console.log('连接数据库成功')
-});
-
-// 如果有账户密码需要采用下面的连接方式mongoose.connect('mongodb://eggadmin:123456@localhost:27017/eggcms');
-```
-
-
-
-3、定义 **Schema** 
-
-数据库中的 Schema，为数据库对象的集合。schema 是 mongoose 里会用到的一种数据模式， 可以理解为表结构的定义;每个 schema 会映射到 mongodb 中的一个 collection，它不具备 操作数据库的能力 
-
-```js
-var UserSchema = mongoose.Schema({
-	name:String,
-	age:Number,
-	sex:String,
-  status:{
-		type:Number, // 指定类型
-		default:1 // 指定默认值，每次增加数据时，会自动增加此字段
-	}
-})
-```
-
-
-
-4、创建数据模型, 以便进行操作数据库
- 定义好了 Schema，接下就是生成 Model。model 是由 schema 生成的模型，可以对数据库的操作。 
-
-注意:mongoose.model 里面可以传入两个参数也可以传入三个参数 
-
-mongoose.model(参数 1:模型名称(首字母大写)，参数 2:Schema) 
-
-mongoose.model(参数 1:模型名称(首字母大写)，参数 2:Schema，参数 3:数据库集合名 称) 
-
-如果传入 **2** 个参数的话**:**这个模型会和模型名称相同的复数的数据库建立连接:如通过下面 方法创建模型，那么这个模型将会操作 users 这个集合。 
-
-```js
-// model 里面的第一个参数，要注意： 1 首字母要大写。 2. 要和数据库表(集合)名称对应。
-//这个模型 model 会和模型名称相同的复数的数据库表建立连接 例如：Schema 叫 User . 数据库表必须叫 users
-// model 里面的第二个参数，将定义好的 Schema 放进去
-var User = mongoose.model('User',UserSchema);
-```
-
-
-
-如果传入 **3** 个参数的话**:**模型默认操作第三个参数定义的集合名称 
-
-```js
-// model 里放入第三个参数，意思是 指定要关联的 数据库中的表（集合）
-var User = mongoose.model('User',UserSchema,'user');
-```
-
-
-
-5、查找数据 
-
-```js
-// 5. 通过 Schema 操作对应的数据库中的表(集合)
- User.find({},(err,result) => {
- 	if(err){
- 		console.log(err);
- 		return;
- 	}
- 	console.log(result);
- })
-```
-
-
-
-6、增加数据 
-
-```js
-// 6. 增加数据 1.实例化 Model  2. 实例 .save()
- var u = new User({
- 	name : '张张',
- 	age : 20,
- 	sex : '男'
- });
-
- u.save(function(err){
- 	if(err){
- 		console.log(err);
- 		return;
- 	}
- 	console.log('增加成功');
- })
-```
-
-
-
-7、修改数据 
-
-```js
- // 7.更新数据
- User.updateOne({'_id':'5cac01ccedffc4192e3827dd'},{'name':'新张三'},function(err,doc){
- 	if(err){
- 		console.log(err);
- 		return;
- 	}
- 	console.log(doc);
- 	console.log('修改成功')
- })
-```
-
-
-
-**8**、删除数据 
-
-```js
-User.deleteOne(
-	{'_id':'5cac01ccedffc4192e3827dd'},
-	(err,result) => {
-		if(err){
-			console.log(err);
-			return;
-		}
-	console.log(result);
-	console.log('删除成功')
-	})
-```
-
-
-
-**9**、保存成功查找 
-
-```js
-var u=new User({ name:'lisi2222333', 
-
-age:20, 
-
-status:true //类型转换 }) 
-
-u.save(function(err,docs){ if(err){ 
-
-console.log(err); 
-
-return; } 
-
-//console.log(docs); User.find({},function(err,docs){ 
-
-if(err){ console.log(err); 
-
-return; } 
-
-console.log(docs); }) 
-
-}); 
-```
-
-
-
-三、**mongoose** 模块化 看教程演示 
-
-1. 先设置连接数据库的模块
-
-   ```js
-   // mongooseDB.js 页面
-   // 通过 mongoose 连接 mongoDB 数据库
-   
-   // 1. 引入 mongoose 模块
-   const mongoose = require('mongoose'); 
-   
-    // 2. 通过 mongoose 连接 mongo 数据库
-   mongoose.connect('mongodb://127.0.0.1:27017/vue_koa_demo', {useNewUrlParser:true},(err) => {
-   	if(err){
-   		console.log('连接数据库失败');
-   		console.log(err);
-   		return;
-   	}
-   	console.log('连接数据库成功');
-   });
-   
-   module.exports = mongoose;
-   ```
-
-   
-
-   
-
-2. 设置 一个 表(集合)的 mongoose 模块映射
-
-   ```js
-   
-   // 通过 mongoose 操控 mongo 数据库中的 lesson 表(集合)
-   
-   // 1. 引入数据库连接页面，与 mongo 数据库建立连接
-   var mongoose = require('./mongooseDB.js');
-   
-   // 2. 建立 Schema ，与 lesson 表里的参数进行映射
-   var LessonSchema = mongoose.Schema({
-   	id:Number,
-   	timestamp:Date,
-   	author:String,
-   	reviewer:String,
-   	title:String,
-   	content_short:String,
-   	forecast:Number,
-   	importance:Number,
-   	type:String,
-   	status:String,
-   	display_time:Date,
-   	comment_disabled:Boolean,
-   	pageviews:Number,
-   	image_url:String,
-   	platforms:String,
-   	pid:String
-   })
-   
-   // 3. 建立 module 模型
-   var LessonModel = mongoose.model('Lesson',LessonSchema,'lesson');
-   
-   module.exports = LessonModel;
-   ```
-
-3. 具体操作lesson表的页面
-
-   ```js
-   // 引入 数据库 lesson 集合的 mongoose 模块
-   var LessonModel = require('./lesson.js');
-   
-   LessonModel.find(json1,{sessionCode:attr},function(err,doc){
-   				if(err){
-   					reject(err)
-   					console.log(err);
-   					return;
-   				}
-   				console.log(doc);
-   				resolve(doc);
-   })
-   ```
-
-   
-
-###mongoose 预定义模式修饰符 
-
-lowercase、uppercase 、trim 
-
-mongoose 提供的预定义模式修饰符，可以对我们增加的数据进行一些格式化。 
-
-```js
-var UserSchema=mongoose.Schema({ name:{ 
-
-type:String, 
-
-trim:true }, 
-
-age:Number, status:{ 
-
-type:Number, 
-
-default:1 } 
-
-}) 
-```
-
-
-
-二、**Mongoose Getters** 与 **Setters** 自定义修饰符 
-
-除了 mongoose 内置的修饰符以外，我们还可以通过 set(建议使用) 修饰符在增加数据的 时候对数据进行格式化。也可以通过 get(不建议使用)在实例获取数据的时候对数据进行 
-
-格式化。 
-
-```js
-var NewsSchema=mongoose.Schema({ title:"string", 
-
-author:String, pic:String, redirect:{ 
-
-type:String, set(url){ 
-
-if(!url) return url; if(url.indexOf('http://')!=0 
-
-url = 'http://' + url; } 
-
-return url; } 
-
-}, content:String, status:{ 
-
-type:Number, default:1 
-
-} }) 
-
-&& url.indexOf('https://')!=0){ 
-
-var NewsSchema=mongoose.Schema({ title:"string", 
-
-author:String, pic:String, redirect:{ 
-
-type:String, set(url){ 
-
-if(!url) return url; if(url.indexOf('http://')!=0 
-
-url = 'http://' + url; 
-
-&& url.indexOf('https://')!=0){ 
-
-} 
-
-return url; }, 
-
-get: function(url){ if(!url) return url; 
-
-if(url.indexOf('http://')!=0 url = 'http://' + url; 
-
-} 
-
-return url; } 
-
-}, content:String, status:{ 
-
-type:Number, default:1 
-
-} }) 
-
-&& url.indexOf('https://')!=0){ 
-```
-
-
-
-###一、Mongoose 索引 
-
-索引是对数据库表中一列或多列的值进行排序的一种结构，可以让我们查询数据库变得更 快。MongoDB 的索引几乎与传统的关系型数据库一模一样，这其中也包括一些基本的查询 优化技巧。 
-
-mongoose 中除了以前创建索引的方式，我们也可以在定义 Schema 的时候指定创建索引。 
-
-```js
-var DeviceSchema = new mongoose.Schema({ sn: { 
-
-type: Number, // 唯一索引 unique: true 
-
-}, name: { 
-
-type: String, // 普通索引 index: true 
-
-} }); 
-```
-
-
-
-二、**Mongoose** 内置 **CURD** https://mongoosejs.com/docs/queries.html 
-
-```js
-Model.deleteMany()
-Model.deleteOne()
-Model.find()
-Model.findById()
-Model.findByIdAndDelete()
-Model.findByIdAndRemove()
-Model.findByIdAndUpdate()
-Model.findOne()
-Model.findOneAndDelete()
-Model.findOneAndRemove()
-Model.findOneAndUpdate()
-Model.replaceOne()
-Model.updateMany()
-Model.updateOne()
-```
-
-
-
-三、扩展 **Mongoose CURD** 方法 
-
-```js
-var mongoose=require('./db.js');
- var UserSchema=mongoose.Schema({ 
-
-name:{ type:String 
-
-}, age:Number, 
-
-status:{ type:Number, 
-
-default:1 
-
-} }) 
-
-// 静态方法 
-
- UserSchema.statics.findByUid=function(uid,cb){ 
-
-this.find({"_id":uid},function(err,docs){ cb(err,docs) 
-
-}) } 
-
-
-// 实例方法 
-
-UserSchema.methods.print = function(){ 
-
-console.log('这是一个实例方法'); 
-
-console.log(this); }; 
-
-module.exports=mongoose.model('User',UserSchema,'user'); 
-```
-
-
-
-###一、Mongoose 校验参数 
-
-**required** : 表示这个数据必须传入
-**max**: 用于 Number 类型数据，最大值
-**min**: 用于 Number 类型数据，最小值 
-
-**enum**:枚举类型，要求数据必须满足枚举值 enum: ['0', '1', '2'] 
-
-**match**:增加的数据必须符合 match(正则)的规则 
-
-**maxlength**:最大值
-**minlength**:最小值 
-
-
-
-```js
-var UserSchema = new mongoose.Schema({ name:{ 
-
-type:String, 
-
-required: true, 
-
-}, 
-```
-
-
-
-```js
-age: {
- type: Number,
- // 是否必须的校验器 required: true,
- // 数字类型的最大值校验器 max: 120,
- // 数字类型的最小值校验器 min: 0 
-
-}, 
-  
-status: { 
-type: String,
- // 设置字符串的可选值 enum: ['0', '1', '2'] 
-}, 
-  
-phone:{ 
-type:Number, 
-match: /^\d{11}$/ 
-}, 
-
-desc: {
- type: String, 
- maxlength:20, 
- minlength:10 
-
-} }); 
-```
-
-
-
-####二、Mongoose 自定义的验证器 
-
-在缺省情况下创建的索引均不是唯一索引。下面的示例将创建唯一索引，如: 
-
-```js
-var UserSchema = new mongoose.Schema({ 
- name:{ 
-     type:String, 
-      required: true, 
- }, 
-  
-  age: { 
-    type: Number,
-      // 是否必须的校验器 required: true,
-      // 数字类型的最大值校验器 
-     max: 120,
-     // 数字类型的最小值校验器 min: 0 
-   }, 
-  
-  
-  status: { 
-      type: String,
-      // 设置字符串的可选值 enum: ['0', '1', '2'] 
-   }, 
-  
-  
-  phone:{ 
-     type:Number, 
-     match: /^\d{11}$/ 
-  }, 
-
-  desc: {
-     type: String, 
-// 自定义的验证器，如果通过验证返回 true，没有通过则返回 false 
-   
-    validate: function(desc) { 
-           return desc.length >= 10; 
-     } 
-
-} }); 
-```
-
-
-
-
-
-
-
 
 
 

@@ -63,7 +63,7 @@ make install
 cd /usr/local/src
 
 ```js
-wget <https://www.openssl.org/source/openssl-1.0.1t.tar.gz>
+wget https://www.openssl.org/source/openssl-1.0.2s.tar.gz
 
 tar -zxvf openssl-1.0.1t.tar.gz
 
@@ -128,12 +128,24 @@ systemctl start nginx.service  # 开启nginx服务器
 ```js
 sudo firewall-cmd --permanent --zone=public --add-service=http   #给防火墙 firewall 添加 http 通道
 
-sudo firewall-cmd --permanent --zone=public —add-service=https   # 给防火墙 添加 https 通道  复制本命令注意 - -  不是 —
+sudo firewall-cmd --permanent --zone=public --add-service=https   # 给防火墙 添加 https 通道  复制本命令注意 - -  不是 —
 
 sudo firewall-cmd --reload 
 ```
 
 重启防火墙后，打开浏览器访问服务器的 IP 地址 或 域名，如果浏览器出现 Welcome to nginx! 则表示 Nginx 已经安装并运行成功。
+
+如果不能访问 nginx 首页
+
+```js
+wget localhsot // 测试是否能访问 localhost, 如果可以访问到，那检查 你的浏览器是否设置了代理模式，取消代理模式，换个浏览器试试
+
+// chrome 最简单取消代理的方法，就是到 chrome 浏览器 设置/高级设置/重置设置    
+
+
+
+
+```
 
 
 

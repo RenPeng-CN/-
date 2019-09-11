@@ -30,6 +30,12 @@
 
 ​           
 
+### Linux CentOS 查看日志命令
+
+```js
+journalctl -xe // 日志控制，查看日志
+```
+
 
 
 

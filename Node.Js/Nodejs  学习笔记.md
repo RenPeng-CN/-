@@ -377,67 +377,164 @@ npm install --registry=https://registry.npm.taobao.org
 
 pm2 是一个带有负载均衡功能的Node应用的进程管理器
 
-1. npm install -g pm2  #安装PM2
+1.  ##### 安装PM2
 
-2. pm2 start bin/ www –name scienceKids  #启动node应用, 并给应用起个名字
+2. ```js
+   npm install -g pm2  //安装PM2
+   npm install pm2@latest -g // 安装最新版的 pm2
+   ```
 
-3. pm2 start bin/www —watch  # 添加应用 并监控
+   2. #####启动 node.js 应用
 
-4. pm2 stop - -watch 0  #停止监控 序列 0 的应用
+3. ```js
+   pm2 start app.js // cd 到程序的目录，执行 启动程序命令
+   ```
 
-5. pm2 stop www  #停止应用
+   3. #####启动其它应用
 
-6. pm2 stop all  #停止所有应用
+   ```js
+   $ pm2 start bashscript.sh
+   $ pm2 start python-app.py --watch
+   $ pm2 start binary-file -- --port 1520
+   ```
 
-7. pm2 delete www  #删除www应用
+   4. #####其它参数的使用
 
-8. pm2 delete all  #删除所有应用
+   ```js
+   # Specify an app name 指定一个应用名称
+   pm2 start app.js --name ScienceKids
+   
+   # Watch and Restart app when files change 监控并在文件改变时重启app
+   pm2 start app.js --name ScienceKids --watch
+   
+   # Set memory threshold for app reload 设置内存临界点 200MB 重启应用
+   pm2 start app.js --name ScienceKids --watch --max-memory-restart 200
+   
+   # Specify log file 指定日志文件路径
+   pm2 start app.js --name ScienceKids --watch --max-memory-restart 200 --log <log_path>
+   
+   # Pass extra arguments to the script 让脚本通过额外的参数
+   -- arg1 arg2 arg3
+   
+   # Delay between automatic restarts 
+   --restart-delay <delay in ms>
+   
+   # Prefix logs with time 按时间给日志加前缀
+   --time
+   
+   # Do not auto restart app 不要自动重启 app
+   pm2 start app.js --no-autorestart
+   
+   # Specify cron for forced restart 指定定时任务 强制重启 app
+   --cron <cron_pattern>
+   
+   # Attach to application log 附加到 app 的日志上
+   --no-daemon
+   ```
 
-9. pm2 list  #列出所有应用
+   ```js
+   pm2 --help  # 查看帮助
+   pm2 restart app_name  #重启 app
+   pm2 restart all  # 重启所有应用
+   pm2 reload app_name  # 重启 app
+   pm2 stop app_name  # 停止 app
+   pm2 delete app_name  #删除 app
+   pm2 start app_name —watch #添加监控
+   pm2 stop --watch 0  #停止监控 序列是 0 的应用
+   pm2 stop all  #停止所有应用
+   pm2 delete app_name  #删除 app_name 应用
+   pm2 delete all  #删除所有应用
+   pm2 [list|ls|status]  #列出所有应用
+   pm2 describe app_name  #查看www进程的具体情况
+   pm2 monit  # 查看应用的资源消耗情况
+   pm2 logs  # 查看pm2的运行日志
+   pm2 logs --lines 200 # 查看旧的日志
+   pm2 start app.js -i max # 启动 app 用最大线程
+   pm2 start app_name -i 4 --watch  #通过 cluster 4线程 模式启动node 并监控
+   pm2 start app.js -i 3 #开启三个进程 pm2 start app.js -i max  #根据机器cpu核数，开启对应数目的进程
+   pm2 startup  # 生成开机启动命令
+   pm2 save #保存当前进程状态
+   pm2 update # 自我升级
+   pm2 plus  #
+   
+   ```
 
-10. pm2 describe www  #查看www进程的具体情况
+ ```js
+pm2 ecosystem # 生成 生态系统文件
 
-11. pm2 monit  # 查看应用的资源消耗情况
+module.exports = {
+  apps : [{
+    name: "app",
+    script: "./app.js",
+    env: {
+      NODE_ENV: "development",
+    },
+    env_production: {
+      NODE_ENV: "production",
+    }
+  }, {
+     name: 'worker',
+     script: 'worker.js'
+  }]
+}
+ ```
 
-12. pm2 restart www  #重启应用
+```js
+pm2 start app.js --watch --ignore-watch="node_modules"  # 忽略 watch 
+```
 
-13. pm2 restart all  # 重启所有应用
+```js
+# Cheat Sheet 备忘录 小抄
+# Fork mode
+pm2 start app.js --name my-api # Name process 给程序命名
 
-14. pm2 logs  # 查看pm2的运行日志
+# Cluster mode
+pm2 start app.js -i 0        # Will start maximum processes with LB depending on available CPUs
+pm2 start app.js -i max      # Same as above, but deprecated.
+pm2 scale app +3             # Scales `app` up by 3 workers
+pm2 scale app 2              # Scales `app` up or down to 2 workers total
 
-15. pm2 start www -i 4 --watch  #通过 cluster 4线程 模式启动node 并监控
+# Listing
 
- 
+pm2 list               # Display all processes status
+pm2 jlist              # Print process list in raw JSON
+pm2 prettylist         # Print process list in beautified JSON
 
- 
+pm2 describe 0         # Display all informations about a specific process
 
-在项目更目录建立一个  xxx.json 文件，粘贴如下列内容，注意配置 log 路径
+pm2 monit              # Monitor all processes
 
-16. pm2 start app.js -i 3 #开启三个进程 pm2 start app.js -i max  #根据机器cpu核数，开启对应数目的进程
+# Logs
 
-17. pm2 --help
+pm2 logs [--raw]       # Display all processes logs in streaming
+pm2 flush              # Empty all log files
+pm2 reloadLogs         # Reload all logs
 
-18. 开机启动  pm2 startup  
+# Actions
 
-​      pm2 save 保存当前进程状态
+pm2 stop all           # Stop all processes
+pm2 restart all        # Restart all processes
 
-​      pm2 startup  生成开机启动命令
+pm2 reload all         # Will 0s downtime reload (for NETWORKED apps)
 
-19. 更新pm2 
+pm2 stop 0             # Stop specific process id
+pm2 restart 0          # Restart specific process id
 
-​     pm2 save  #先保存进程状态
+pm2 delete 0           # Will remove process from pm2 list
+pm2 delete all         # Will remove all processes from pm2 list
 
-​     Npm install pm2 -g
+# Misc
 
-​     pm2 update
+pm2 reset <process>    # Reset meta data (restarted time...)
+pm2 updatePM2          # Update in memory pm2
+pm2 ping               # Ensure pm2 daemon has been launched
+pm2 sendSignal SIGUSR2 my-app # Send system signal to script
+pm2 start app.js --no-daemon
+pm2 start app.js --no-vizion
+pm2 start app.js --no-autorestart
+```
 
-20. 如果手动重启了 服务器，pm2却没有重新启动，/usr/share/nginx/html/sciencekids/bin/www 
 
-​       **pm2 start www -i 4 --name sciencekids --watch** 
-
-​       --name sciencekids --watch 到这个地址可以启动进程
-
- 
 
 21. npm i   # 按照 package.json 里记录的模块，下载所有模块
 
