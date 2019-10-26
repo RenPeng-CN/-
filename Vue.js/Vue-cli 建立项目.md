@@ -1,6 +1,3 @@
-[TOC]
-
-
 
 # Vue-cli 建立项目步骤
 
@@ -36,8 +33,24 @@ $ vue init <template-name> <project-name>
 
 ###示例 Example:
 
-```
-$ vue init webpack my-project
+```js
+// cli2.XXX 的用法
+$ vue init webpack my-project // 这是 cli2.XXX 的创建方式
+run dev
+
+// cli3.XXX 的用法（推荐） 直接连 git 都自动创建好了
+$ vue create my-app
+cd my-app // 进入创建好的项目
+npm run server  // 运行此项目
+vue add element // 安装 element
+
+// 配置 vue.config.js (关闭保存代码错误提示)
+module.exports = {
+	lintOnSave: false
+}
+
+// 在终端，先停止服务，然后输入
+vue ui // 打开项目管理的图形界面，关闭 ESlint 每次保存不在检查格式
 ```
 
 The above command pulls the template from [vuejs-templates/webpack](https://github.com/vuejs-templates/webpack), prompts for some information, and generates the project at `./my-project/`.
