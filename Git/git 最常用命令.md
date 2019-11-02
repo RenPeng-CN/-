@@ -9,6 +9,7 @@ git merge --no-ff -m "merge with no-ff" dev // 准备合并dev分支，
 git log --pretty=oneline // 美化log 显示
 git branch -d dev // 删除 dev 分支，合并后，就可以删除 dev 分支了
 git switch -c dev // 切换并创立新的分支 dev。 使用新的git switch命令，比git checkout要更容易理解。
+git remote add origin git@github.com:RenPeng-CN/learngit.git  // 添加远程仓库
 git push -u XiaoMiStore master // 推向 github
 rm -f ./.git/index.lock  // git 清除 另一个git进程似乎在这个仓库中运行
 ```
