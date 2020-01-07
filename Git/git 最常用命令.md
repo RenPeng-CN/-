@@ -2,13 +2,17 @@
 
 ```js
 git branch -a // 查看本地和远程分支
+git checkout -b dev  // 创建 dev 分支
+git branch -d dev // 删除 dev 分支
 git add -A  // 一次性提交所有修改内容到 暂存区
 git checkout -b issue-1 // 创建新的 bug 分支
+git branch -D <name> //如果要丢弃一个没有被合并过的分支，可以通过强行删除。 
 git merge dev // 在 master 分支下，执行 合并 dev 分支的命令
 git merge --no-ff -m "merge with no-ff" dev // 准备合并dev分支，
 git log --pretty=oneline // 美化log 显示
 git branch -d dev // 删除 dev 分支，合并后，就可以删除 dev 分支了
 git switch -c dev // 切换并创立新的分支 dev。 使用新的git switch命令，比git checkout要更容易理解。
+git switch master // 切换到 master 分支
 git remote add origin git@github.com:RenPeng-CN/learngit.git  // 添加远程仓库
 git push -u XiaoMiStore master // 推向 github
 rm -f ./.git/index.lock  // git 清除 另一个git进程似乎在这个仓库中运行
