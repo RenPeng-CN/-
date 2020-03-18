@@ -1,3 +1,16 @@
+安装 vue-router 和使用
+
+第一步、安装
+``` js
+npm install vue-router --save
+```
+
+第二步、在 src下新建 router.js 文件
+``` js
+
+```
+
+
 复制下面代码，在HBuilder中，输入到 html 页面，运行查看
 
 ```html

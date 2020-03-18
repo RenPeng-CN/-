@@ -86,7 +86,68 @@ npm install # 会检测项目的 package.json 文件，并自动安装项目需�
 
 
 
+npm 更换淘宝源
+一.通过命令配置
+1. 命令
+npm config set registry https://registry.npm.taobao.org
 
+2. 验证命令
+npm config get registry
+如果返回https://registry.npm.taobao.org，说明镜像配置成功。
+
+3. 临时使用 本次从淘宝仓库源下载
+npm --registry=https://registry.npm.taobao.org install
+
+4. //设置淘宝源
+npm config set registry https://registry.npm.taobao.org
+
+5. //设置公司的源
+npm config set registry http://127.0.0.1:4873
+
+6. //查看源，可以看到设置过的所有的源
+npm config get registry
+
+7. 安装
+$ npm install -g nrm
+
+8. 列出可使用的源
+$ nrm ls
+
+*  npm ---- https://registry.npmjs.org
+
+    cnpm --- http://r.cnpmjs.org/
+
+    taobao -http://registry.npm.taobao.org/
+
+    eu ----- http://registry.npmjs.eu/
+
+    au -----  http://registry.npmjs.org.au/
+
+    sl ----- http://npm.strongloop.com/
+
+    nj -----  https://registry.nodejitsu.com/
+
+带*的是当前使用的源，上面的输出表明当前源是官方源。
+
+9. 切换源
+$ nrm use taobao
+        Registry has beensetto: http://registry.npm.taobao.org/
+
+10. 常用 nrm 命令
+1.nrm ls 查看已有的源 
+
+2.nrm add <源名称> <源地址> 新增源 
+
+3.nrm use <源名称>切换到现有的源
+
+4.nrm test  测速
+
+二、cnpm安装 安装cnpm命令,不会改变npm的源
+1. 安装cnpm
+npm install -g cnpm --registry=https://registry.npm.taobao.org
+
+2. 使用cnpm
+cnpm install xxx
 
 
 

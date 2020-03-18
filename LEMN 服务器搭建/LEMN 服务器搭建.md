@@ -28,6 +28,7 @@ journalctl -xe // 查看日志
 4. **<font color="red">cat /etc/redhat-release</font> **   #concatenate 连接   查看CentOS 版本信息
 5.  **<font color="red">httpd –v</font> **  #version  (httpd是Apache[超文本传输协议](https://baike.baidu.com/item/%E8%B6%85%E6%96%87%E6%9C%AC%E4%BC%A0%E8%BE%93%E5%8D%8F%E8%AE%AE/8535513)(HTTP)服务器的主程序。被设计为一个独立运行的后台进程，它会建立一个处理请求的子进程或线程的池。查看是否安装了 Apache 服务器)
 6. **<font color="red">rpm –qa | grep httpd</font> **  # 查看是否安装了 Apache 服务器 ( RedHat Package Management)
+6. **<font color="red">yum erase httpd.x86_64</font> **  # 卸载 httpd apache 服务器
 
 ​             rpm 即 RedHat Package Management
 
@@ -90,6 +91,14 @@ journalctl -xe // 查看日志
 **<font color="red">firewall-cmd --reload</font> ** # 每次都更新防火墙规则，都需要重新更新：
 
 **<font color="red">firewall-cmd --zone=public --list-ports</font> **  #此外，在更新完防火墙的设置后，也可以查看所有开启的端口：
+
+**<font color="red">firewall-cmd --query-port=80/tcp</font>** # 查看80端口是否开启， 如果是华为云服务器，默认关闭 80 端口，需要单独开启
+
+**<font color="red">firewall-cmd --permanent --add-port=80/tcp</font>** # 在防火墙添加 80 端口
+
+**<font color="red">firewall-cmd --reload</font> **  # 重启防火墙
+
+
 
 
 
@@ -718,7 +727,7 @@ atom /etc/hosts  #用 atom编辑器，打开mac上的 hosts 配置
 
 在github 上搜索 mvn ，找到官网发布地址 
 
-\14. curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash #nvm 源装完nvm后，重启centos服务器
+\14. curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash #nvm 源装完nvm后，重启centos服务器
 
 \15.  nvm help  #查看nvm 帮助文档，操作nvm  如果nvm不是最新版，就手动升级nvm
 

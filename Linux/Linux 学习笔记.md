@@ -1,6 +1,11 @@
 #Linux CentOS 文件目录结构
 
-###Linux centos 重启命令：
+### 最常用的 Linux 命令
+
+1. <font color="red">rm -rf filename </font> # 删除非空文件夹,-r 就是向下递归，不管有多少级目录，一并删除 -f 就是直接强行删除，不作任何提示的意思
+2. 
+
+### Linux centos 重启命令：
 
 　　1、<font color="red">reboot</font>
 
@@ -16,7 +21,7 @@
 
 
 
-###Linux centos关机命令
+### Linux centos关机命令
 
 　　1、<font color="red">halt</font> # 立刻关机
 

@@ -1,9 +1,6 @@
-## vue-cli3  (vue 脚手架3 的项目搭建)
+## vue-cli4  (vue 脚手架3 的项目搭建)
 
 ```js
-//全局安装
-$ npm install -g vue-cli
-
 // MAC 电脑终端 升级 vue-cli
 sudo npm install -g @vue/cli  
 
@@ -13,12 +10,14 @@ npm install -g @vue/cli
 // 查看 vue-cli 版本
 vue -V  或者 vue --version
 
-
+// 在 mac 终端 cd 到要创建项目目录的 位置，然后开始创建项目
 // cli3.XXX 的用法（推荐） 直接连 git 都自动创建好了，Element-UI 也自动安装好了
 $ vue create my-app
 cd my-app // 进入创建好的项目
 npm run server  // 运行此项目
-vue add element // 安装 element
+npm run build // 打包项目
+vue add element // 安装 element,用此方法安装 element-ui 不一定会是最新版
+npm i -S element-ui // 安装最新版本的 element-ui
 
 // 配置 vue.config.js (关闭保存代码错误提示)
 module.exports = {
@@ -75,4 +74,79 @@ new Vue({
   router, // 在 vue 中 注册以下，就可以全局使用了
   render: h => h(App),
 }).$mount('#app')
+
+
+
+// 第四步、路由的简化设计，在 src/common/config/router.js 里粘贴下面的路由设计
+//路由设计规则：
+// 一、例如： index/index, shop/index 以index结尾的， path 和 name默认去除index
+// 二、例如：shop/list. 默认生成 name为 shop_list (如果结尾为 index，例如 shop/index 则是 shop)
+// 三、自定义填写 name 和 path 后，则不再自动生成
+let routes = [
+		{
+			path:'/',
+			name:'layout',
+			redirect:{name:'index'},
+			component:'layout',
+			children:[
+				{
+					component:'index/index'
+				}
+			]
+		},
+		{
+			component:'login/index'
+		},
+		{
+			path:'*',
+			redirect:{name:'index'}
+		}
+	]
+
+// 获取路由信息的方法
+let getRoutes = function()
+{   // 生成 name
+    
+    // 生成 path
+	// 自动生成路由component
+	createRoute(routes)
+	return routes
+}
+
+// 自动生成路由component
+function createRoute(arr){
+	for (let i = 0; i < arr.length; i++) {
+		if(!arr[i].component) return
+		// 去除路由结尾的 index
+		let val = removeIndex(arr[i].component)
+		// 生成路由的name, 把字符串中的 / 换成 _ 
+		arr[i].name = arr[i].name || val.replace(/\//g,'_')
+		// 生成 path, 如果用户自动生成了 path，就不再生成了
+		arr[i].path = arr[i].path || `/${val}`
+		// 自动生成 component
+		let componentFun = import(`@/views/${arr[i].component}.vue`)
+		arr[i].component = ()=>componentFun
+		if(arr[i].children && arr[i].children.length > 0){
+			createRoute(arr[i].children)
+		}
+	}
+}
+
+// 去除结尾的 index
+function removeIndex(str){
+	// str = login/index
+	// 获取最后一个 / 在字符串中的索引
+	let index = str.lastIndexOf('/')
+	// 获取最后一个 / 后面的值
+	let val = str.substring(index+1,str.length)
+	// 判断是不是index结尾
+	if(val === 'index'){
+		return str.substring(index,-1)
+	}
+	return str
+	
+}
+
+
+export default getRoutes()
 ```
