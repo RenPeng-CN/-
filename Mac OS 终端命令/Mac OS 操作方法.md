@@ -403,5 +403,17 @@ chmod 600 ~/.ssh/science.dms // 重要哦
 ssh science // 再重新登录
 ```
 
+### Mac 上 安装 MySql
+``` js
+brew install mysql // 通过 brew 安装 mysql
+brew service start mysql  // 可以后台启动mysql
+mysql.server start // 前台启动mysql(关闭控制台，服务停止)
+mysql.server stop // 停止 mysql
+mysql -u root -p // 登录 mysql 第一次 默认密码：123456
+alter user 'root'@'localhost' identified with mysql_native_password by 'root'; // 修改 root 密码
+Query OK, 0 rows affected (0.00 sec) // 如果显示此行，表示修改密码 并登录成功
+exit; // 退出 mysql
+mysql -u root -p // 重新登录 mysql
+```
 
 
