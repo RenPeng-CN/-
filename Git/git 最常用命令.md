@@ -14,8 +14,10 @@ git branch -d dev // 删除 dev 分支，合并后，就可以删除 dev 分支�
 git switch -c dev // 切换并创立新的分支 dev。 使用新的git switch命令，比git checkout要更容易理解。
 git switch master // 切换到 master 分支
 git remote add origin git@github.com:RenPeng-CN/learngit.git  // 添加远程仓库
+git remote rm origin // 删除一个远程地址  origin 为地址名称
 git push -u XiaoMiStore master // 推向 github
 rm -f ./.git/index.lock  // git 清除 另一个git进程似乎在这个仓库中运行
+
 ```
 
 

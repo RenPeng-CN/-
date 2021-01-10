@@ -417,3 +417,11 @@ mysql -u root -p // 重新登录 mysql
 ```
 
 
+
+
+#### Mac 上 制作 其它的 Linux 系统安装 U盘
+ 1. 把U盘插入到Mac，然后通过浏览器下载系统的光盘文件(ISO)到 mac电脑上。
+ 2. 打开 mac 上的 终端，输入  diskutil list. 列出全部硬盘分区的详情，确认你的 u盘是 那个分区 （例如 /dev/disk2)
+ 3. 然后输入命令卸载该 u 盘，输入  diskutil unmountDisk /dev/disk2
+ 4. 制作：sudo dd if=/Volumes/renpeng/OS/uos-20-home-desktop-amd64.iso of=/dev/disk2 bs=1m 其中 /Volumes .... 为 自己下载的 ISO 地址
+ bs=1m是刻录的速度。回车输入管理员密码，即可刻录好一个系统盘了的   
